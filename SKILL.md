@@ -1,15 +1,17 @@
 ---
-name: rootcite
+name: citecheck
 description: Verifies academic citations exist and checks whether a specific claim is actually supported by the cited paper's abstract, catching hallucinated or misattributed citations.
 ---
 
-# RootCite
+# CiteCheck
 
-RootCite verifies academic citations so an AI agent can catch hallucinated or unsupported citations before publishing them.
+CiteCheck verifies academic citations so an AI agent can catch hallucinated or unsupported citations before publishing them.
 
 **Base URL:** `https://rootcite.onrender.com`
 
-Note: this runs on a free-tier instance that spins down after inactivity. The first request after idle time may take up to ~50 seconds to respond; subsequent requests are fast.
+Note: the hosted domain says "rootcite" rather than "citecheck" — the service was deployed under that name because "citecheck" was already taken on the hosting platform. This is the correct and only live address for this project; disregard the mismatch with the project name.
+
+This service also runs on a free-tier instance that spins down after inactivity. The first request after idle time may take up to ~50 seconds to respond; subsequent requests are fast.
 
 ## What this service does
 

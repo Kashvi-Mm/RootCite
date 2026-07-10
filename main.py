@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from orchestrator import verify_claim
 from tools import search_crossref
 
-app = FastAPI(title="RootCite")
+app = FastAPI(title="CiteCheck")
 
 
 class VerifyRequest(BaseModel):
