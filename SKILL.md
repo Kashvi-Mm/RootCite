@@ -1,6 +1,15 @@
+---
+name: rootcite
+description: Verifies academic citations exist and checks whether a specific claim is actually supported by the cited paper's abstract, catching hallucinated or misattributed citations.
+---
+
 # RootCite
 
 RootCite verifies academic citations so an AI agent can catch hallucinated or unsupported citations before publishing them.
+
+**Base URL:** `https://rootcite.onrender.com`
+
+Note: this runs on a free-tier instance that spins down after inactivity. The first request after idle time may take up to ~50 seconds to respond; subsequent requests are fast.
 
 ## What this service does
 
@@ -19,7 +28,7 @@ Check whether a single cited paper exists.
 
 Request body:
 ```json
-{"title": "paper title", "author": "optional author last name", "year": "optional year"}
+{"title": "paper title", "author": "optional author last name", "year": "optional year, e.g. \"2016\""}
 ```
 
 Response:
@@ -30,6 +39,8 @@ or
 ```json
 {"found": false}
 ```
+
+Note: `year` in the request is a string used to narrow the search to that publication year; `year` in the response is the integer year returned by CrossRef.
 
 ### POST /verify-batch
 
@@ -57,6 +68,15 @@ Response:
 ```
 
 `claim_supported` is one of `"true"`, `"false"`, or `"unclear"`.
+
+## Errors
+
+If an upstream API (CrossRef, Semantic Scholar, or Claude) fails or times out, endpoints return a 200 response with an honest failure shape rather than a raw 500:
+
+- `/verify` and `/verify-batch`: `{"found": false, "error": "description of what failed"}`
+- `/verify-claim`: `{"error": "description of what failed"}`
+
+Treat any response containing an `"error"` field as unverified, not as a negative result.
 
 ## Honest limitations
 

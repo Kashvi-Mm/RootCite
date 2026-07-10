@@ -75,13 +75,16 @@ def verify_claim(claim: str, citation: str) -> dict:
 
     response = None
     for _ in range(6):
-        response = client.messages.create(
-            model=MODEL,
-            max_tokens=1024,
-            system=SYSTEM_PROMPT,
-            tools=TOOLS,
-            messages=messages,
-        )
+        try:
+            response = client.messages.create(
+                model=MODEL,
+                max_tokens=1024,
+                system=SYSTEM_PROMPT,
+                tools=TOOLS,
+                messages=messages,
+            )
+        except anthropic.APIError as e:
+            return {"error": f"Claude API request failed: {e}"}
 
         if response.stop_reason != "tool_use":
             break

@@ -17,9 +17,15 @@ def search_crossref(title: str, author: str | None = None, year: str | None = No
     params = {"query.bibliographic": title, "rows": 5}
     if author:
         params["query.author"] = author
+    if year:
+        params["filter"] = f"from-pub-date:{year}-01-01,until-pub-date:{year}-12-31"
 
-    resp = httpx.get(CROSSREF_API, params=params, timeout=10.0)
-    resp.raise_for_status()
+    try:
+        resp = httpx.get(CROSSREF_API, params=params, timeout=10.0)
+        resp.raise_for_status()
+    except httpx.HTTPError as e:
+        return {"found": False, "error": f"CrossRef request failed: {e}"}
+
     items = resp.json().get("message", {}).get("items", [])
 
     best_item = None
@@ -52,30 +58,33 @@ def search_crossref(title: str, author: str | None = None, year: str | None = No
 
 
 def get_semantic_scholar_abstract(doi: str | None = None, title: str | None = None) -> dict:
-    if doi:
-        resp = httpx.get(
-            f"{SEMANTIC_SCHOLAR_API}/DOI:{doi}",
-            params={"fields": "title,abstract"},
-            timeout=10.0,
-        )
-        if resp.status_code == 200:
-            data = resp.json()
-            if data.get("abstract"):
-                return {"found": True, "abstract": data["abstract"], "title": data.get("title")}
+    try:
+        if doi:
+            resp = httpx.get(
+                f"{SEMANTIC_SCHOLAR_API}/DOI:{doi}",
+                params={"fields": "title,abstract"},
+                timeout=10.0,
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("abstract"):
+                    return {"found": True, "abstract": data["abstract"], "title": data.get("title")}
 
-    if title:
-        resp = httpx.get(
-            f"{SEMANTIC_SCHOLAR_API}/search",
-            params={"query": title, "fields": "title,abstract", "limit": 1},
-            timeout=10.0,
-        )
-        if resp.status_code == 200:
-            results = resp.json().get("data", [])
-            if results and results[0].get("abstract"):
-                return {
-                    "found": True,
-                    "abstract": results[0]["abstract"],
-                    "title": results[0].get("title"),
-                }
+        if title:
+            resp = httpx.get(
+                f"{SEMANTIC_SCHOLAR_API}/search",
+                params={"query": title, "fields": "title,abstract", "limit": 1},
+                timeout=10.0,
+            )
+            if resp.status_code == 200:
+                results = resp.json().get("data", [])
+                if results and results[0].get("abstract"):
+                    return {
+                        "found": True,
+                        "abstract": results[0]["abstract"],
+                        "title": results[0].get("title"),
+                    }
+    except httpx.HTTPError as e:
+        return {"found": False, "error": f"Semantic Scholar request failed: {e}"}
 
     return {"found": False}
