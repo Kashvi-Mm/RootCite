@@ -1,6 +1,6 @@
-# CiteCheck
+# RootCite
 
-CiteCheck verifies academic citations so an AI agent can catch hallucinated or unsupported citations before publishing them.
+RootCite verifies academic citations so an AI agent can catch hallucinated or unsupported citations before publishing them.
 
 ## What this service does
 

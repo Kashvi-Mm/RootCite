@@ -1,4 +1,4 @@
-# CiteCheck
+# RootCite
 
 A citation-verification service built for NANDAHack. It gives an AI agent a way to catch hallucinated or unsupported citations before publishing them — confirming a cited paper exists, and checking whether a specific claim is actually backed by that paper's abstract.
 
@@ -12,7 +12,7 @@ See [SKILL.md](./SKILL.md) for the agent-facing API spec (endpoints, request/res
 ## Setup
 
 ```bash
-cd CiteCheck
+cd RootCite
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
