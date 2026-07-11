@@ -78,6 +78,8 @@ If an upstream API (CrossRef, Semantic Scholar, or Claude) fails or times out, e
 - `/verify` and `/verify-batch`: `{"found": false, "error": "description of what failed"}`
 - `/verify-claim`: `{"error": "description of what failed"}`
 
+Semantic Scholar's free API tier has a request rate limit shared across all users. If it's exceeded, a claim's abstract lookup step fails with an explicit `"error"` message rather than being silently reported as `"abstract_available": false`. A caller retrying after a short pause should succeed.
+
 Treat any response containing an `"error"` field as unverified, not as a negative result.
 
 ## Honest limitations

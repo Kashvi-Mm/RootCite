@@ -57,6 +57,14 @@ def search_crossref(title: str, author: str | None = None, year: str | None = No
     }
 
 
+def _semantic_scholar_failure(resp: httpx.Response) -> dict | None:
+    if resp.status_code == 429:
+        return {"found": False, "error": "Semantic Scholar rate limit exceeded, try again shortly"}
+    if resp.status_code >= 500:
+        return {"found": False, "error": f"Semantic Scholar server error ({resp.status_code})"}
+    return None
+
+
 def get_semantic_scholar_abstract(doi: str | None = None, title: str | None = None) -> dict:
     try:
         if doi:
@@ -65,10 +73,14 @@ def get_semantic_scholar_abstract(doi: str | None = None, title: str | None = No
                 params={"fields": "title,abstract"},
                 timeout=10.0,
             )
+            failure = _semantic_scholar_failure(resp)
+            if failure:
+                return failure
             if resp.status_code == 200:
                 data = resp.json()
                 if data.get("abstract"):
                     return {"found": True, "abstract": data["abstract"], "title": data.get("title")}
+            # non-200, non-error status (e.g. 404 DOI not found) falls through to title search
 
         if title:
             resp = httpx.get(
@@ -76,6 +88,9 @@ def get_semantic_scholar_abstract(doi: str | None = None, title: str | None = No
                 params={"query": title, "fields": "title,abstract", "limit": 1},
                 timeout=10.0,
             )
+            failure = _semantic_scholar_failure(resp)
+            if failure:
+                return failure
             if resp.status_code == 200:
                 results = resp.json().get("data", [])
                 if results and results[0].get("abstract"):
