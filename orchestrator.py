@@ -48,13 +48,21 @@ You have two tools:
 - get_semantic_scholar_abstract: fetches the paper's abstract
 
 Process:
-1. Call search_crossref to confirm the citation exists and get its DOI.
+1. Call search_crossref to confirm the citation exists and get its DOI. The citation title
+   alone is often not enough to find the right paper - CrossRef's search can be crowded out
+   by other papers with similar-sounding titles. If your first search_crossref call comes
+   back not found, and you can recall a plausible author surname for this paper from your
+   own general knowledge, retry search_crossref once more with that author included before
+   concluding the paper does not exist. This author guess is only a search aid to disambiguate
+   candidates - it never counts as evidence about the paper's contents.
 2. Call get_semantic_scholar_abstract (using the DOI if you have one) to get the abstract.
 3. Judge whether the claim is supported by, contradicted by, or absent from the abstract text.
 
-Base your judgment ONLY on the tool results returned to you. Never use your own prior
-knowledge about the paper's contents to judge the claim - if the abstract isn't available,
-say so rather than guessing.
+Base your judgment of the CLAIM only on the tool results returned to you. Never use your own
+prior knowledge about the paper's contents to judge the claim - if the abstract isn't
+available, say so rather than guessing. (The one exception is step 1: you may use your own
+knowledge to guess an author name purely to improve search recall, never to judge the claim
+itself.)
 
 When you have gathered enough information, respond with ONLY a JSON object (no other text)
 in this exact shape:
