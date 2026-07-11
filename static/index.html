@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CiteCheck</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #faf9f7;
+    --card: #ffffff;
+    --border: #e3e0da;
+    --text: #1c1b1a;
+    --muted: #6b6660;
+    --accent: #b5482a;
+    --green: #2f7d4f;
+    --red: #b5482a;
+    --amber: #a8791a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1918;
+      --card: #242320;
+      --border: #38352f;
+      --text: #ede9e3;
+      --muted: #a39c92;
+      --accent: #e08a63;
+      --green: #6cc292;
+      --red: #e08a63;
+      --amber: #e0c068;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem 1rem 4rem;
+  }
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  header h1 {
+    font-size: 2rem;
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.02em;
+  }
+  header p {
+    color: var(--muted);
+    margin: 0;
+    font-size: 0.95rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .card h2 {
+    font-size: 1.1rem;
+    margin: 0 0 0.25rem;
+  }
+  .card .desc {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin: 0 0 1.1rem;
+  }
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin: 0.8rem 0 0.3rem;
+  }
+  input, textarea {
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+  }
+  textarea { min-height: 4.5rem; resize: vertical; }
+  button {
+    margin-top: 1.1rem;
+    width: 100%;
+    padding: 0.7rem;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .result {
+    margin-top: 1.1rem;
+    padding: 1rem;
+    border-radius: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    font-size: 0.88rem;
+    display: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .result.show { display: block; }
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.6rem;
+  }
+  .badge.true { background: color-mix(in srgb, var(--green) 20%, transparent); color: var(--green); }
+  .badge.false { background: color-mix(in srgb, var(--red) 20%, transparent); color: var(--red); }
+  .badge.unclear, .badge.notfound { background: color-mix(in srgb, var(--amber) 20%, transparent); color: var(--amber); }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 2rem;
+  }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>CiteCheck</h1>
+    <p>Catch hallucinated or unsupported citations before an agent publishes them.</p>
+  </header>
+
+  <div class="card">
+    <h2>Does this paper exist?</h2>
+    <p class="desc">Checks CrossRef for a real match.</p>
+    <label>Title</label>
+    <input id="v-title" placeholder="e.g. Deep Residual Learning for Image Recognition">
+    <label>Author (optional)</label>
+    <input id="v-author" placeholder="e.g. He">
+    <label>Year (optional)</label>
+    <input id="v-year" placeholder="e.g. 2016">
+    <button onclick="runVerify()">Check</button>
+    <div id="v-result" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h2>Is this claim actually supported?</h2>
+    <p class="desc">Fetches the paper's abstract and has Claude judge the claim against it.</p>
+    <label>Claim</label>
+    <textarea id="c-claim" placeholder="e.g. This paper proves deeper networks always perform worse."></textarea>
+    <label>Citation (title or DOI)</label>
+    <input id="c-citation" placeholder="e.g. Deep Residual Learning for Image Recognition">
+    <button onclick="runVerifyClaim()">Verify Claim</button>
+    <div id="c-result" class="result"></div>
+  </div>
+
+  <footer>
+    <a href="https://github.com/Kashvi-Mm/CiteCheck" target="_blank">Source on GitHub</a>
+    &nbsp;&middot;&nbsp;
+    <a href="/docs">API docs</a>
+  </footer>
+</main>
+
+<script>
+async function runVerify() {
+  const btn = event.target;
+  const box = document.getElementById('v-result');
+  box.className = 'result show';
+  box.textContent = 'Checking… (first request after idle can take up to a minute)';
+  btn.disabled = true;
+
+  const body = {
+    title: document.getElementById('v-title').value,
+    author: document.getElementById('v-author').value || null,
+    year: document.getElementById('v-year').value || null,
+  };
+
+  try {
+    const res = await fetch('/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.found) {
+      box.innerHTML = `<span class="badge true">Found</span>\n`
+        + `Title: ${data.title}\n`
+        + `Authors: ${(data.authors || []).join(', ')}\n`
+        + `Journal: ${data.journal || 'n/a'}\n`
+        + `Year: ${data.year || 'n/a'}\n`
+        + `DOI: ${data.doi || 'n/a'}`;
+    } else {
+      box.innerHTML = `<span class="badge notfound">Not Found</span>\n`
+        + (data.error ? `Error: ${data.error}` : 'No confident match — unverified, not necessarily fake.');
+    }
+  } catch (e) {
+    box.textContent = 'Request failed: ' + e;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function runVerifyClaim() {
+  const btn = event.target;
+  const box = document.getElementById('c-result');
+  box.className = 'result show';
+  box.textContent = 'Checking… (first request after idle can take up to a minute)';
+  btn.disabled = true;
+
+  const body = {
+    claim: document.getElementById('c-claim').value,
+    citation: document.getElementById('c-citation').value,
+  };
+
+  try {
+    const res = await fetch('/verify-claim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.error) {
+      box.innerHTML = `<span class="badge false">Error</span>\n${data.error}`;
+      return;
+    }
+    const verdict = data.claim_supported || 'unclear';
+    box.innerHTML = `<span class="badge ${verdict}">${verdict}</span>\n`
+      + `Paper found: ${data.paper_found}\n`
+      + `Abstract available: ${data.abstract_available}\n\n`
+      + `${data.reasoning || ''}`;
+  } catch (e) {
+    box.textContent = 'Request failed: ' + e;
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

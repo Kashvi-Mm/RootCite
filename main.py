@@ -1,12 +1,18 @@
 from typing import List, Optional
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from orchestrator import verify_claim
 from tools import search_crossref
 
 app = FastAPI(title="CiteCheck")
+
+
+@app.get("/")
+def demo_ui():
+    return FileResponse("static/index.html")
 
 
 class VerifyRequest(BaseModel):
